@@ -1,19 +1,8 @@
 <template>
-    <div class="range">
-
-        <div class="range__value">{{value}} %</div>
-        <div>Координаты : X : <span>{{offx}}</span></div>
-
-        <div class="middle">
-
-            <div class="slider">
-               <!-- <div class="thumb"></div>-->
-                <div class="visible__track" ref="visibleTrack"  @mousemove="setValue($event)"></div>
-                <div class="thumb" ref='thumb'   @mouseup="isDrag=false" @mousedown="isDrag=true"  ></div>
-            </div>
+    <div class="range-slider">
+        <div class="track" ref="track" @mousedown="onTrackMouseDown">
+            <div ref="thumb" :class="thumbClass"></div>
         </div>
-
-
     </div>
 </template>
 
@@ -21,72 +10,122 @@
     export default {
         name: "RangeSlider",
         props: {
-
             value: {
                 type: Number,
                 default: 0
             },
-            min: {
-                type: Number,
-                default: 0
-            },
-            max: {
-                type: Number,
-                default: 100
-            },
-            step: {
-                type: Number,
-                default: 0.1
-            }
-
         },
         data() {
             return {
+                currentValue: 0,
                 isDrag: false,
-                offx: 0,
-
+                thumbWidth: 30,
             }
         },
+        created() {
+            window.addEventListener("mouseup", this.stopDrag);
+            window.addEventListener("mousemove", this.onMouseMoveWindow);
+        },
+        destroyed() {
+            window.removeEventListener("mouseup", this.stopDrag);
+            window.removeEventListener("mousemove", this.onMouseMoveWindow);
+        },
+        mounted() {
+            this.setValuePercent(this.value);
+        },
         methods: {
-            setValue(event) {
-                this.offx = event.offsetX
-                if(this.isDrag){
-                    this.$refs.thumb.style.left = this.offx - 20  + 'px'
+            startDrag() {
+                this.isDrag = true;
+            },
+            stopDrag() {
+                this.isDrag = false;
+            },
+            onMouseMoveWindow(e) {
+                if (this.isDrag) {
+                    this.setThumbPosMouse(e);
+
                 }
             },
+            onTrackMouseDown(e) {
+                this.setThumbPosMouse(e);
+                this.startDrag();
+            },
+            setThumbPosMouse(e) {
+                let trackRect = this.$refs.track.getBoundingClientRect();  // размер и позиция track
+                console.log(trackRect)
+                let trackWidth = this.$refs.track.clientWidth;
 
+
+                let newValue = e.clientX - trackRect.left - this.thumbWidth * 0.5;
+
+                if (newValue < 0) {
+                    newValue = 0;
+                }
+
+                if (newValue > trackWidth - this.thumbWidth) {
+                    newValue = trackWidth - this.thumbWidth;
+                }
+
+                this.$refs.thumb.style.left = newValue === 0 ? 0 : newValue + 'px';
+                this.currentValue = Math.round((newValue / (trackWidth - this.thumbWidth) * 100) * 10) / 10;
+            },
+            setValuePercent(val) {
+                this.currentValue = val;
+                this.$refs.thumb.style.left = (this.$refs.track.clientWidth - this.thumbWidth) * val / 100 + 'px';
+                console.log(  this.$refs.thumb.style.left)
+            },
         },
-        computed: {}
-
+        computed: {
+            thumbClass() {
+                return {
+                    thumb: true,
+                    dragged: this.isDrag,
+                }
+            }
+        },
+        watch: {
+            value() {
+                this.setValuePercent(this.value);
+            },
+            currentValue() {
+                this.$emit("input", this.currentValue);
+            }
+        }
     }
 </script>
 
 <style lang="scss" scoped>
 
-    .visible__track {
-        background: red;
-        width: 100%;
-        height: 40px;
+    .range-slider {
+        background: linear-gradient(to right, #66e3ce 10%, #6bcead 35%, #e6c371 70%, #b94a48 99%);
+        border-radius: 20px;
+        padding: 0 5px 0 5px;
     }
 
-    .thumb{
+    .track {
+        width: 100%;
+        height: 40px;
+        color: rgba(255, 255, 255, 0.47);
+    }
+
+    .thumb {
         height: 30px;
         width: 30px;
         z-index: 105;
-        background: white;
-        position: absolute;
-        top: 0;
-
-        left: 100%;
+        background: #fff;
+        border-radius: 15px;
+        position: relative;
+        top: 5px;
     }
 
-    .range__value {
-        color: rgba(255, 255, 255, 0.47);
-        font-size: 24px;
-        background: linear-gradient(
-                        to right,
-                        #66e3ce 10%, #6bcead 35%, #e6c371 70%, #b94a48 99%
-        );
+    .dragged {
+        background: #f5f5f5;
     }
 
+    .thumb, .thumb::after, .thumb::before {
+        -webkit-user-select: none;
+        -webkit-user-drag: none;
+        -webkit-app-region: no-drag;
+        cursor: default;
+    }
 </style>
