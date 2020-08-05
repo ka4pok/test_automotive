@@ -1,6 +1,6 @@
 <template>
     <div class="range-slider">
-        <div class="track" ref="track" @mousedown="onTrackMouseDown">
+        <div class="track" ref="track" @mousedown="onTrackMouseDown" @touchstart="onTrackMouseDown">
             <div ref="thumb" :class="thumbClass"></div>
         </div>
     </div>
@@ -24,11 +24,16 @@
         },
         created() {
             window.addEventListener("mouseup", this.stopDrag);
+            window.addEventListener("touchend", this.stopDrag);
             window.addEventListener("mousemove", this.onMouseMoveWindow);
+            window.addEventListener("touchmove", this.onMouseMoveWindow);
+
         },
         destroyed() {
             window.removeEventListener("mouseup", this.stopDrag);
+            window.removeEventListener("touchend", this.stopDrag);
             window.removeEventListener("mousemove", this.onMouseMoveWindow);
+            window.removeEventListener("touchmove", this.onMouseMoveWindow);
         },
         mounted() {
             this.setValuePercent(this.value);
@@ -41,19 +46,28 @@
                 this.isDrag = false;
             },
             onMouseMoveWindow(e) {
+
                 if (this.isDrag) {
                     this.setThumbPosMouse(e);
                 }
             },
             onTrackMouseDown(e) {
+
                 this.setThumbPosMouse(e);
                 this.startDrag();
             },
             setThumbPosMouse(e) {
+
                 let trackRect = this.$refs.track.getBoundingClientRect();
                 let trackWidth = this.$refs.track.clientWidth;
+                let newValue=0;
 
-                let newValue = e.screenX - trackRect.left - this.thumbWidth * 0.5;
+                if(e.clientX){
+                    newValue = e.clientX - trackRect.left - this.thumbWidth * 0.5;
+                }
+                else {
+                    newValue = e.touches[0].clientX  - trackRect.left - this.thumbWidth * 0.5;
+                }
 
                 if (newValue < 0) {
                     newValue = 0;
