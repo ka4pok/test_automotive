@@ -100,9 +100,6 @@
                 this.isPopupVisible = false
             },
             deleteUser(id) {
-                this.users = this.users.filter((user, index) => {
-                    return user.id !== id
-                })
                 this.GET_USER_TO_DELETE(id)
             }
         },
